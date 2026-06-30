@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}New Period{% endblock %}
+{% block content %}
+<h1>New Cashbook Period</h1>
+<div class="card form-card">
+  <form method="post">
+    <label>Period Label <span class="muted">(e.g. "October 2023")</span>
+      <input type="text" name="label" required>
+    </label>
+    <label>Calendar Year
+      <input type="number" name="calendar_year" value="{{ '2026' }}" required>
+    </label>
+    <div class="form-row">
+      <label>Start Date <input type="date" name="start_date"></label>
+      <label>End Date <input type="date" name="end_date"></label>
+    </div>
+
+    {% if not has_existing %}
+    <fieldset>
+      <legend>Opening Balances <span class="muted">(this is the very first period for this barangay)</span></legend>
+      <div class="form-row">
+        <label>Local Treasury <input type="text" name="opening_lt_balance" placeholder="0.00"></label>
+        <label>Bank <input type="text" name="opening_bank_balance" placeholder="0.00"></label>
+      </div>
+      <div class="form-row">
+        <label>Cash Advance <input type="text" name="opening_ca_balance" placeholder="0.00"></label>
+        <label>Petty Cash <input type="text" name="opening_petty_balance" placeholder="0.00"></label>
+      </div>
+    </fieldset>
+    {% else %}
+    <p class="muted">Opening balances will be carried forward automatically from the previous period's ending balances.</p>
+    {% endif %}
+
+    <button type="submit" class="btn btn-primary">Create Period</button>
+  </form>
+</div>
+{% endblock %}

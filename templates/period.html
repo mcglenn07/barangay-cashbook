@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}{{ period.label }} &mdash; {{ barangay.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ period.label }}</h1>
+    <p class="muted">{{ barangay.name }}, {{ barangay.municipality }}, {{ barangay.province }} &middot; CY {{ period.calendar_year }}</p>
+  </div>
+  <div class="head-actions">
+    <a class="btn" href="{{ url_for('export_period_pdf', period_id=period.id) }}">⬇ Export PDF</a>
+  </div>
+</div>
+
+<div class="card table-card">
+<div class="table-scroll">
+<table class="ledger-table">
+  <thead>
+    <tr>
+      <th rowspan="2">Date</th>
+      <th rowspan="2">Particulars</th>
+      <th rowspan="2">Reference</th>
+      <th colspan="3">Cash in Local Treasury</th>
+      <th colspan="3">Cash in Bank</th>
+      <th colspan="3">Cash Advance</th>
+      <th colspan="3">Petty Cash</th>
+    </tr>
+    <tr>
+      <th>Collections</th><th>Deposit</th><th>Balance</th>
+      <th>Deposit</th><th>Check Issued</th><th>Balance</th>
+      <th>Receipt</th><th>Disbursements</th><th>Balance</th>
+      <th>Receipt/Replen.</th><th>Payments</th><th>Balance</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="row-beginning">
+      <td></td><td><strong>Beginning Balance</strong></td><td></td>
+      <td></td><td></td><td class="num">{{ '{:,.2f}'.format(opening.lt) }}</td>
+      <td></td><td></td><td class="num">{{ '{:,.2f}'.format(opening.bank) }}</td>
+      <td></td><td></td><td class="num">{{ '{:,.2f}'.format(opening.ca) }}</td>
+      <td></td><td></td><td class="num">{{ '{:,.2f}'.format(opening.petty) }}</td>
+    </tr>
+    {% for tx in ledger %}
+    <tr class="{{ 'row-cancelled' if tx.is_cancelled else '' }}">
+      <td>{{ tx.entry_date }}</td>
+      <td>{% if tx.is_cancelled %}<span class="tag-cancelled">CANCELLED</span> {{ tx.particulars if tx.particulars != 'CANCELLED' else '' }}{% else %}{{ tx.particulars }}{% endif %}</td>
+      <td>{{ tx.check_number or tx.reference or '' }}</td>
+      {% if tx.is_cancelled %}
+      <td colspan="12"></td>
+      {% else %}
+      <td class="num">{{ '{:,.2f}'.format(tx.lt_collection) if tx.lt_collection else '' }}</td>
+      <td class="num">{{ '{:,.2f}'.format(tx.lt_deposit) if tx.lt_deposit else '' }}</td>
+      <td class="num">{{ '{:,.2f}'.format(tx.lt_balance) }}</td>
+      <td class="num">{{ '{:,.2f}'.format(tx.bank_deposit) if tx.bank_deposit else '' }}</td>
+      <td class="num">{{ '{:,.2f}'.format(tx.bank_check_issued) if tx.bank_check_issued else '' }}</td>
+      <td class="num">{{ '{:,.2f}'.format(tx.bank_balance) }}</td>
+      <td class="num">{{ '{:,.2f}'.format(tx.ca_receipt) if tx.ca_receipt else '' }}</td>
+      <td class="num">{{ '{:,.2f}'.format(tx.ca_disbursement) if tx.ca_disbursement else '' }}</td>
+      <td class="num">{{ '{:,.2f}'.format(tx.ca_balance) }}</td>
+      <td class="num">{{ '{:,.2f}'.format(tx.petty_receipt) if tx.petty_receipt else '' }}</td>
+      <td class="num">{{ '{:,.2f}'.format(tx.petty_payment) if tx.petty_payment else '' }}</td>
+      <td class="num">{{ '{:,.2f}'.format(tx.petty_balance) }}</td>
+      {% endif %}
+      {% if current_user.role == 'treasurer' %}
+      <td class="row-actions">
+        <form method="post" action="{{ url_for('delete_transaction', period_id=period.id, tx_id=tx.id) }}" onsubmit="return confirm('Remove this entry?');">
+          <button type="submit" class="btn-link danger">✕</button>
+        </form>
+      </td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+    <tr class="row-total">
+      <td></td><td><strong>Total</strong></td><td></td>
+      <td class="num">{{ '{:,.2f}'.format(totals.lt_collection) }}</td>
+      <td class="num">{{ '{:,.2f}'.format(totals.lt_deposit) }}</td><td></td>
+      <td class="num">{{ '{:,.2f}'.format(totals.bank_deposit) }}</td>
+      <td class="num">{{ '{:,.2f}'.format(totals.bank_check_issued) }}</td><td></td>
+      <td class="num">{{ '{:,.2f}'.format(totals.ca_receipt) }}</td>
+      <td class="num">{{ '{:,.2f}'.format(totals.ca_disbursement) }}</td><td></td>
+      <td class="num">{{ '{:,.2f}'.format(totals.petty_receipt) }}</td>
+      <td class="num">{{ '{:,.2f}'.format(totals.petty_payment) }}</td><td></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+{% if current_user.role == 'treasurer' %}
+<div class="card form-card">
+  <h2>Add Transaction</h2>
+  <form method="post" action="{{ url_for('add_transaction', period_id=period.id) }}" class="tx-form">
+    <div class="form-row">
+      <label>Date <input type="text" name="entry_date" placeholder="e.g. 10/2/2023" required></label>
+      <label>Particulars <input type="text" name="particulars" placeholder="e.g. Honorarium September"></label>
+      <label>Reference <input type="text" name="reference" placeholder="RCD/RBDCM no."></label>
+      <label>Check No. <input type="text" name="check_number" placeholder="e.g. 34185650"></label>
+    </div>
+    <label class="checkbox-row"><input type="checkbox" name="is_cancelled"> Mark as CANCELLED check (no amounts)</label>
+
+    <div class="fund-grid">
+      <fieldset>
+        <legend>Cash in Local Treasury</legend>
+        <label>Collections <input type="text" name="lt_collection" placeholder="0.00"></label>
+        <label>Deposit (to Bank) <input type="text" name="lt_deposit" placeholder="0.00"></label>
+      </fieldset>
+      <fieldset>
+        <legend>Cash in Bank</legend>
+        <label>Deposit (from LT/NTA/Interest) <input type="text" name="bank_deposit" placeholder="0.00"></label>
+        <label>Check Issued <input type="text" name="bank_check_issued" placeholder="0.00"></label>
+      </fieldset>
+      <fieldset>
+        <legend>Cash Advance</legend>
+        <label>Receipt <input type="text" name="ca_receipt" placeholder="0.00"></label>
+        <label>Disbursements (liquidation) <input type="text" name="ca_disbursement" placeholder="0.00"></label>
+      </fieldset>
+      <fieldset>
+        <legend>Petty Cash</legend>
+        <label>Receipt/Replenishment <input type="text" name="petty_receipt" placeholder="0.00"></label>
+        <label>Payments <input type="text" name="petty_payment" placeholder="0.00"></label>
+      </fieldset>
+    </div>
+    <button type="submit" class="btn btn-primary">Add Entry</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="card signoff-card">
+  <h2>Sign-off</h2>
+  <div class="signoff-grid">
+    <div class="signoff-block">
+      <h3>Treasurer Certification</h3>
+      <p class="muted small">{{ barangay.treasurer_name }}</p>
+      {% if period.certified_by_treasurer %}
+        <span class="badge badge-green">Certified on {{ period.certified_date }}</span>
+      {% elif current_user.role == 'treasurer' %}
+        <form method="post" action="{{ url_for('certify_period', period_id=period.id) }}" class="inline-form">
+          <input type="text" name="certified_date" placeholder="Date (e.g. 10/30/2026)" required>
+          <button type="submit" class="btn btn-primary btn-small">Certify</button>
+        </form>
+      {% else %}
+        <span class="badge badge-gray">Not yet certified</span>
+      {% endif %}
+    </div>
+    <div class="signoff-block">
+      <h3>Captain Approval</h3>
+      <p class="muted small">{{ barangay.captain_name }} &middot; printed as the signature line on the exported PDF</p>
+      {% if period.approved_by_captain %}
+        <span class="badge badge-blue">Approved on {{ period.approved_date }}</span>
+      {% elif current_user.role == 'captain' %}
+        <form method="post" action="{{ url_for('approve_period', period_id=period.id) }}" class="inline-form">
+          <input type="text" name="approved_date" placeholder="Date (e.g. 10/30/2026)" required>
+          <button type="submit" class="btn btn-primary btn-small">Approve / Note</button>
+        </form>
+      {% else %}
+        <span class="badge badge-gray">Not yet approved</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

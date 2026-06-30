@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Dashboard &mdash; {{ barangay.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Barangay {{ barangay.name }}</h1>
+    <p class="muted">{{ barangay.municipality }}, {{ barangay.province }}</p>
+    <p class="muted">Treasurer: <strong>{{ barangay.treasurer_name }}</strong> &middot; Captain: <strong>{{ barangay.captain_name }}</strong></p>
+  </div>
+  {% if current_user.role == 'treasurer' %}
+  <a class="btn btn-primary" href="{{ url_for('new_period') }}">+ New Period</a>
+  {% endif %}
+</div>
+
+{% if period_summaries|length == 0 %}
+  <div class="card empty-state">
+    <p>No cashbook periods yet.</p>
+    {% if current_user.role == 'treasurer' %}
+      <a class="btn btn-primary" href="{{ url_for('new_period') }}">Create the first period</a>
+    {% endif %}
+  </div>
+{% else %}
+<div class="period-grid">
+  {% for s in period_summaries %}
+  <a class="card period-card" href="{{ url_for('view_period', period_id=s.period.id) }}">
+    <div class="period-card-head">
+      <h3>{{ s.period.label }}</h3>
+      <span class="badge {% if s.period.certified_by_treasurer %}badge-green{% else %}badge-gray{% endif %}">
+        {{ 'Certified' if s.period.certified_by_treasurer else 'Draft' }}
+      </span>
+    </div>
+    <p class="muted small">{{ s.tx_count }} transaction(s)</p>
+    <table class="mini-balance-table">
+      <tr><td>Local Treasury</td><td>₱{{ '{:,.2f}'.format(s.ending.lt_balance) }}</td></tr>
+      <tr><td>Bank</td><td>₱{{ '{:,.2f}'.format(s.ending.bank_balance) }}</td></tr>
+      <tr><td>Cash Advance</td><td>₱{{ '{:,.2f}'.format(s.ending.ca_balance) }}</td></tr>
+      <tr><td>Petty Cash</td><td>₱{{ '{:,.2f}'.format(s.ending.petty_balance) }}</td></tr>
+    </table>
+    {% if s.period.approved_by_captain %}<span class="badge badge-blue">Captain approved</span>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

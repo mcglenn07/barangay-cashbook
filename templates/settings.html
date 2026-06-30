@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Barangay Settings{% endblock %}
+{% block content %}
+<h1>Barangay Settings</h1>
+<div class="card form-card">
+  <form method="post">
+    <label>Barangay Name
+      <input type="text" name="name" value="{{ barangay.name }}" required>
+    </label>
+    <label>Municipality
+      <input type="text" name="municipality" value="{{ barangay.municipality }}" required>
+    </label>
+    <label>Province
+      <input type="text" name="province" value="{{ barangay.province }}" required>
+    </label>
+    <label>Barangay Treasurer (printed on certification)
+      <input type="text" name="treasurer_name" value="{{ barangay.treasurer_name }}" required>
+    </label>
+    <label>Barangay Captain (printed as signatory)
+      <input type="text" name="captain_name" value="{{ barangay.captain_name }}" required>
+    </label>
+    <button type="submit" class="btn btn-primary">Save</button>
+  </form>
+</div>
+{% endblock %}

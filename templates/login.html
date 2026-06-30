@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Sign in &mdash; Barangay Cashbook{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <div class="card login-card">
+    <h1>Sign in</h1>
+    <p class="muted">Barangay Cashbook &mdash; Treasurer &amp; Captain access</p>
+    <form method="post">
+      <label>Username
+        <input type="text" name="username" autofocus required>
+      </label>
+      <label>Password
+        <input type="password" name="password" required>
+      </label>
+      <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+    </form>
+    <div class="demo-box">
+      <strong>Demo accounts</strong> (seeded sample data &mdash; Brgy. Sta. Rosa Del Sur):
+      <ul>
+        <li><code>treasurer</code> / <code>treasurer123</code> &mdash; full edit access</li>
+        <li><code>captain</code> / <code>captain123</code> &mdash; read-only + PDF export</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
