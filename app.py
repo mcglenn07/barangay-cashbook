@@ -18,6 +18,9 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
 def ensure_db():
     if not os.path.exists(db.DB_PATH):
         db.init_db()
+        if os.environ.get("CASHBOOK_AUTOSEED", "1") != "0":
+            import seed
+            seed.run()
 
 
 @app.before_request
@@ -312,4 +315,6 @@ def export_period_pdf(period_id):
 
 if __name__ == "__main__":
     ensure_db()
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    debug = os.environ.get("FLASK_DEBUG", "1") == "1"
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=debug, host="0.0.0.0", port=port)
